@@ -1,671 +1,216 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Botanica — Plant Identifier</title>
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Nunito:wght@300;400;500;600&display=swap" rel="stylesheet" />
-
-  <style>
-    :root {
-      --forest-deep:   #0e2414;
-      --forest-base:   #163520;
-      --forest-mid:    #1f472c;
-      --forest-light:  #2d6040;
-      --canopy:        #3a7a52;
-      --moss:          #5c9e6b;
-      --fern:          #7dba8a;
-      --dew:           #b4ddb8;
-      --parchment:     #f0ead6;
-      --gold-leaf:     #c8a845;
-      --amber:         #d4824a;
-      --ease-organic:  cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; }
-
-    body {
-      font-family: 'Nunito', sans-serif;
-      background: var(--forest-base);
-      color: var(--parchment);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    /* Forest Background */
-    .bg-forest {
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background:
-        radial-gradient(ellipse 55% 45% at 18% 12%, rgba(61,130,82,0.22) 0%, transparent 65%),
-        radial-gradient(ellipse 40% 55% at 82% 8%,  rgba(46,100,62,0.18) 0%, transparent 60%),
-        radial-gradient(ellipse 70% 40% at 50% 100%,rgba(10,22,13,0.7)   0%, transparent 70%),
-        radial-gradient(ellipse 30% 30% at 5%  60%, rgba(30,72,44,0.25)  0%, transparent 55%),
-        radial-gradient(ellipse 35% 25% at 95% 55%,rgba(30,72,44,0.2)   0%, transparent 50%),
-        linear-gradient(175deg, #0e2414 0%, #163520 35%, #1f472c 65%, #0f2215 100%);
-    }
-
-    /* Grain texture */
-    .bg-grain {
-      position: fixed; inset: 0; z-index: 1; pointer-events: none;
-      opacity: 0.045;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)'/%3E%3C/svg%3E");
-      background-size: 200px 200px;
-    }
-
-    /* Leaf canvas */
-    #leaf-canvas { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
-
-    /* Shell */
-    .shell {
-      position: relative; z-index: 10;
-      max-width: 780px;
-      margin: 0 auto;
-      padding: 56px 28px 100px;
-    }
-
-    /* Header */
-    header {
-      text-align: center;
-      margin-bottom: 48px;
-      animation: riseIn 1s 0.1s ease both;
-    }
-    .eyebrow {
-      display: inline-block;
-      font-family: 'Cormorant Garamond', serif;
-      font-style: italic;
-      font-size: 0.95rem;
-      color: var(--fern);
-      letter-spacing: 0.12em;
-      margin-bottom: 12px;
-      opacity: 0.85;
-    }
-    h1 {
-      font-family: 'Cormorant Garamond', serif;
-      font-weight: 700;
-      font-size: clamp(2.8rem, 7vw, 5rem);
-      line-height: 1.05;
-      letter-spacing: -0.02em;
-      color: var(--parchment);
-      text-shadow: 0 4px 32px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.05);
-    }
-    h1 span {
-      font-style: italic;
-      color: var(--fern);
-      display: block;
-    }
-    .header-desc {
-      margin-top: 16px;
-      font-size: 1rem;
-      font-weight: 300;
-      color: rgba(180,221,184,0.7);
-      line-height: 1.7;
-      max-width: 420px;
-      margin-left: auto; margin-right: auto;
-    }
-    .header-divider {
-      display: flex; align-items: center; justify-content: center; gap: 14px;
-      margin-top: 22px;
-    }
-    .divider-line { flex: 1; max-width: 80px; height: 1px; background: linear-gradient(90deg, transparent, rgba(124,186,138,0.4)); }
-    .divider-line.r { background: linear-gradient(90deg, rgba(124,186,138,0.4), transparent); }
-    .divider-glyph { font-size: 1.1rem; opacity: 0.55; }
-
-    /* Buttons */
-    .controls {
-      display: flex; justify-content: center; gap: 18px; flex-wrap: wrap;
-      margin-bottom: 40px;
-      animation: riseIn 1s 0.3s ease both;
-    }
-    .btn {
-      position: relative;
-      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-      padding: 15px 32px;
-      border-radius: 100px;
-      border: none;
-      font-family: 'Nunito', sans-serif;
-      font-size: 0.97rem; font-weight: 600;
-      cursor: pointer;
-      overflow: hidden;
-      transition: transform 0.3s var(--ease-organic), box-shadow 0.3s ease;
-      letter-spacing: 0.03em;
-    }
-    .btn::after {
-      content: '';
-      position: absolute; inset: 0; border-radius: inherit;
-      background: radial-gradient(circle at var(--rx, 50%) var(--ry, 50%), rgba(255,255,255,0.18) 0%, transparent 70%);
-      opacity: 0; transition: opacity 0.4s ease; pointer-events: none;
-    }
-    .btn:hover::after { opacity: 1; }
-    .btn::before {
-      content: '';
-      position: absolute; inset: 0; border-radius: inherit;
-      background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.08) 50%, transparent 70%);
-      transform: translateX(-100%); transition: transform 0.6s ease;
-    }
-    .btn:hover::before { transform: translateX(100%); }
-
-    .btn-primary {
-      background: linear-gradient(135deg, var(--canopy) 0%, var(--forest-light) 100%);
-      color: #e8f5e3;
-      box-shadow: 0 6px 28px rgba(30,80,45,0.55), inset 0 1px 0 rgba(255,255,255,0.12);
-    }
-    .btn-primary:hover {
-      transform: translateY(-3px) scale(1.03);
-      box-shadow: 0 14px 40px rgba(30,80,45,0.7), 0 0 0 1px rgba(124,186,138,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
-    }
-    .btn-primary:active { transform: translateY(0) scale(0.98); }
-
-    .btn-secondary {
-      background: rgba(255,255,255,0.04);
-      color: var(--dew);
-      box-shadow: 0 0 0 1.5px rgba(180,221,184,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
-    }
-    .btn-secondary:hover {
-      background: rgba(93,160,107,0.14);
-      transform: translateY(-3px) scale(1.03);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 0 1.5px rgba(124,186,138,0.55);
-      color: #d0efd4;
-    }
-    .btn-secondary:active { transform: translateY(0) scale(0.98); }
-
-    .btn-stop {
-      background: rgba(180,80,60,0.12);
-      color: #e8a090;
-      box-shadow: 0 0 0 1.5px rgba(200,100,80,0.3);
-    }
-    .btn-stop:hover {
-      background: rgba(180,80,60,0.22);
-      transform: translateY(-3px) scale(1.03);
-      box-shadow: 0 10px 24px rgba(150,50,30,0.35), 0 0 0 1.5px rgba(200,100,80,0.5);
-    }
-    .btn-icon { width: 20px; height: 20px; flex-shrink: 0; transition: transform 0.4s var(--ease-organic); }
-    .btn:hover .btn-icon { transform: scale(1.18) rotate(-5deg); }
-
-    /* Card */
-    .card {
-      background: rgba(14,30,17,0.72);
-      border: 1px solid rgba(124,186,138,0.15);
-      border-radius: 20px;
-      backdrop-filter: blur(14px) saturate(1.4);
-      overflow: hidden;
-      box-shadow: 0 2px 0 rgba(124,186,138,0.08) inset, 0 40px 90px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.04) inset;
-      animation: riseIn 1s 0.45s ease both;
-    }
-
-    /* Webcam */
-    #webcam-container {
-      display: none; flex-direction: column; align-items: center;
-      padding: 24px 24px 20px;
-      background: rgba(0,0,0,0.3);
-      border-bottom: 1px solid rgba(124,186,138,0.1);
-    }
-    #webcam-container.active { display: flex; }
-    #webcam-mount canvas {
-      border-radius: 14px; max-width: 100%; display: block;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(124,186,138,0.1);
-    }
-    .live-badge {
-      margin-top: 12px;
-      display: inline-flex; align-items: center; gap: 7px;
-      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
-      color: var(--fern); opacity: 0.75;
-    }
-    .rec { width: 6px; height: 6px; border-radius: 50%; background: #e06060; animation: blink 1.1s infinite; }
-
-    /* Drop Zone */
-    #drop-zone {
-      padding: 58px 32px; text-align: center; cursor: pointer;
-      transition: background 0.35s ease;
-    }
-    #drop-zone.has-image { padding: 28px; }
-    #drop-zone.drag-over { background: rgba(93,158,107,0.08); }
-    .drop-ornament {
-      position: relative; width: 86px; height: 86px; margin: 0 auto 24px;
-    }
-    .drop-ornament svg { width: 100%; height: 100%; }
-    .drop-ornament-inner {
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 2.2rem; transition: transform 0.5s var(--ease-organic);
-    }
-    #drop-zone:hover .drop-ornament-inner { transform: scale(1.12) rotate(-5deg); }
-    .drop-ring { fill: none; stroke: rgba(124,186,138,0.25); stroke-width: 1; stroke-dasharray: 6 4; animation: spinSlow 18s linear infinite; transform-origin: 50% 50%; }
-    .drop-ring-inner { fill: rgba(30,72,44,0.6); stroke: rgba(124,186,138,0.12); stroke-width: 1; }
-    .drop-title { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 600; color: var(--parchment); margin-bottom: 8px; }
-    .drop-sub { font-size: 0.85rem; color: rgba(180,221,184,0.5); font-weight: 300; }
-
-    #preview-wrap { display: none; flex-direction: column; align-items: center; gap: 14px; }
-    #preview-wrap.visible { display: flex; }
-    #preview-img { max-height: 260px; max-width: 100%; border-radius: 12px; box-shadow: 0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(124,186,138,0.1); object-fit: contain; }
-    .change-link { font-size: 0.8rem; color: rgba(180,221,184,0.55); text-decoration: underline; cursor: pointer; transition: color 0.2s; }
-    .change-link:hover { color: var(--fern); }
-
-    /* Loading */
-    .loading-wrap { display: none; flex-direction: column; align-items: center; gap: 18px; padding: 52px 32px; text-align: center; }
-    .loading-wrap.active { display: flex; }
-    .loader-ring { width: 52px; height: 52px; border-radius: 50%; border: 2px solid rgba(124,186,138,0.15); border-top-color: var(--fern); animation: spin 1s linear infinite; }
-    .loading-text { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.05rem; color: rgba(180,221,184,0.6); }
-
-    /* Results */
-    #results-panel { padding: 28px; }
-    .empty-state { text-align: center; padding: 44px 20px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
-    .empty-state.hidden { display: none; }
-    .empty-leaves { font-size: 2.2rem; letter-spacing: 12px; opacity: 0.3; }
-    .empty-text { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.1rem; color: rgba(180,221,184,0.4); }
-    .results-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px; }
-    .results-label { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 600; color: var(--parchment); }
-    .results-meta { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(180,221,184,0.4); }
-
-    .pred-list { display: flex; flex-direction: column; gap: 8px; }
-    .pred-item {
-      position: relative; border-radius: 12px; padding: 12px 16px;
-      border: 1px solid rgba(124,186,138,0.1);
-      background: rgba(255,255,255,0.02);
-      overflow: hidden; animation: slideRight 0.4s ease both;
-      transition: border-color 0.3s, background 0.3s;
-    }
-    .pred-item.champion { border-color: rgba(124,186,138,0.35); background: rgba(60,120,75,0.1); }
-    .pred-fill-bg {
-      position: absolute; inset-y: 0; left: 0; width: 0;
-      border-radius: 12px 0 0 12px;
-      background: linear-gradient(90deg, rgba(60,120,75,0.12), transparent);
-      transition: width 0.9s cubic-bezier(0.25,0.46,0.45,0.94); pointer-events: none;
-    }
-    .pred-inner { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    .pred-left { display: flex; align-items: center; gap: 10px; }
-    .pred-num { font-family: 'Cormorant Garamond', serif; font-size: 0.85rem; font-weight: 600; color: rgba(180,221,184,0.35); min-width: 18px; }
-    .pred-item.champion .pred-num { color: var(--gold-leaf); }
-    .pred-name { font-weight: 500; font-size: 0.95rem; color: rgba(220,245,222,0.85); }
-    .pred-item.champion .pred-name { color: var(--dew); }
-    .pred-sublabel { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.72rem; color: rgba(180,221,184,0.35); display: block; margin-top: 1px; }
-    .pred-right { display: flex; align-items: center; gap: 10px; }
-    .best-tag { display: none; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold-leaf); background: rgba(200,168,69,0.12); border: 1px solid rgba(200,168,69,0.25); padding: 2px 8px; border-radius: 100px; }
-    .pred-item.champion .best-tag { display: inline-block; }
-    .pred-pct { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 600; min-width: 56px; text-align: right; color: rgba(180,221,184,0.45); transition: color 0.3s; }
-    .pred-item.champion .pred-pct { color: var(--fern); }
-    .pred-track { margin-top: 8px; height: 2px; background: rgba(124,186,138,0.08); border-radius: 10px; overflow: hidden; }
-    .pred-bar { height: 100%; border-radius: 10px; background: rgba(124,186,138,0.25); transition: width 0.9s cubic-bezier(0.25,0.46,0.45,0.94); }
-    .pred-item.champion .pred-bar { background: linear-gradient(90deg, var(--canopy), var(--fern)); }
-
-    /* Footer bar */
-    .card-footer {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 20px;
-      border-top: 1px solid rgba(124,186,138,0.08);
-      background: rgba(0,0,0,0.15);
-      gap: 16px; flex-wrap: wrap;
-    }
-    .footer-item { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: rgba(180,221,184,0.35); font-weight: 400; }
-    .f-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(124,186,138,0.25); }
-    .f-dot.on { background: var(--fern); }
-    .f-dot.live { background: #e06060; animation: blink 1s infinite; }
-
-    /* Toast */
-    #toast { display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(40,12,8,0.9); border: 1px solid rgba(200,90,70,0.35); color: #e8a090; border-radius: 100px; padding: 10px 22px; font-size: 0.85rem; font-weight: 500; z-index: 200; white-space: nowrap; box-shadow: 0 12px 32px rgba(0,0,0,0.5); }
-    #toast.show { display: block; animation: riseIn 0.4s ease; }
-
-    /* Keyframes */
-    @keyframes riseIn     { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
-    @keyframes slideRight { from { opacity:0; transform:translateX(-14px); } to { opacity:1; transform:none; } }
-    @keyframes spin       { to { transform: rotate(360deg); } }
-    @keyframes spinSlow   { to { transform: rotate(360deg); } }
-    @keyframes blink      { 0%,100% { opacity:1; } 50% { opacity:0.15; } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project GreenFinder 🌿</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Playfair+Display:wght@700&display=swap');
+        body { font-family: 'Inter', system-ui, sans-serif; }
+        .title-font { font-family: 'Playfair Display', serif; }
+        .leaf-bg { background: linear-gradient(135deg, #f0f8f0, #e8f5e8); }
+    </style>
 </head>
-<body>
-  <div class="bg-forest"></div>
-  <div class="bg-grain"></div>
-  <canvas id="leaf-canvas"></canvas>
+<body class="leaf-bg min-h-screen text-slate-800">
 
-  <div class="shell">
-    <header>
-      <div class="eyebrow">✦ Plant Identifier ✦</div>
-      <h1>Identify What<span>Grows Around You</span></h1>
-      <p class="header-desc">
-        Point your lens at a plant and the model will identify it.        Twenty species, identified in moments.
-      </p>
-      <div class="header-divider">
-        <div class="divider-line"></div>
-        <span class="divider-glyph">🌿</span>
-        <div class="divider-line r"></div>
-      </div>
-    </header>
-
-    <div class="controls">
-      <button class="btn btn-primary" id="btn-webcam" onclick="startWebcam()">
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-        </svg>
-        Open Live Camera
-      </button>
-      <button class="btn btn-secondary" onclick="triggerUpload()">
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-        </svg>
-        Upload a Photo
-      </button>
-      <button class="btn btn-stop" id="btn-stop" style="display:none" onclick="stopWebcam()">
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <rect x="3" y="3" width="18" height="18" rx="2"/>
-        </svg>
-        Stop Camera
-      </button>
-    </div>
-
-    <div class="card">
-      <div id="webcam-container">
-        <div id="webcam-mount"></div>
-        <div class="live-badge"><span class="rec"></span> Live feed active</div>
-      </div>
-
-      <div id="drop-zone"
-           onclick="handleZoneClick()"
-           ondragover="onDragOver(event)"
-           ondragleave="onDragLeave(event)"
-           ondrop="onDrop(event)">
-        <div id="drop-hint">
-          <div class="drop-ornament">
-            <svg viewBox="0 0 86 86" xmlns="http://www.w3.org/2000/svg">
-              <circle class="drop-ring-inner" cx="43" cy="43" r="36"/>
-              <circle class="drop-ring" cx="43" cy="43" r="40"/>
-            </svg>
-            <div class="drop-ornament-inner">🌱</div>
-          </div>
-          <div class="drop-title">Drop a plant photo here</div>
-          <div class="drop-sub">or click to browse your files &nbsp;·&nbsp; JPG · PNG · WEBP</div>
-        </div>
-        <div id="preview-wrap">
-          <img id="preview-img" src="" alt="Plant preview" />
-          <span class="change-link" onclick="event.stopPropagation(); triggerUpload()">← choose a different photo</span>
-        </div>
-      </div>
-
-      <div class="loading-wrap" id="loading-wrap">
-        <div class="loader-ring"></div>
-        <div class="loading-text" id="loading-text">Reading the leaves…</div>
-      </div>
-
-      <div id="results-panel">
-        <div class="empty-state" id="empty-state">
-          <div class="empty-leaves">🌿 🍃 🌱</div>
-          <div class="empty-text">Your identification results will bloom here.</div>
-        </div>
-        <div id="results-body" style="display:none">
-          <div class="results-head">
-            <span class="results-label">What the forest says</span>
-            <span class="results-meta" id="results-meta"></span>
-          </div>
-          <div class="pred-list" id="label-container"></div>
-        </div>
-      </div>
-
-      <div class="card-footer">
-        <div class="footer-item"><span class="f-dot" id="f-model"></span><span id="f-model-txt">Model not loaded</span></div>
-        <div class="footer-item"><span class="f-dot" id="f-cam"></span><span id="f-cam-txt">Camera off</span></div>
-        <div class="footer-item" id="f-fps" style="display:none"><span id="f-fps-txt">— fps</span></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="toast"></div>
-  <input type="file" id="image-upload" accept="image/*" style="display:none" onchange="handleFileInput(this)" />
-
-  <script>
-  /* ═══ Falling Leaves (Canvas) ═══ */
-  (function () {
-    const canvas = document.getElementById('leaf-canvas');
-    const ctx = canvas.getContext('2d');
-    let W, H;
-
-    // Leaf shape definitions as Path2D-compatible SVG path strings (centered at 0,0)
-    const shapeDefs = [
-      'M0,-28 C12,-20 18,-6 16,10 C14,24 -14,24 -16,10 C-18,-6 -12,-20 0,-28Z',
-      'M0,-32 C8,-18 10,0 8,18 C5,30 -5,30 -8,18 C-10,0 -8,-18 0,-32Z',
-      'M0,-20 C14,-14 18,2 14,16 C10,26 -10,26 -14,16 C-18,2 -14,-14 0,-20Z',
-      'M0,-18 C6,-26 20,-22 20,-10 C20,4 8,18 0,26 C-8,18 -20,4 -20,-10 C-20,-22 -6,-26 0,-18Z',
-    ];
-    const paths = shapeDefs.map(d => new Path2D(d));
-
-    const colors = ['#4a8055','#5c9e6b','#3a6845','#7dba8a','#a8d4ac','#c8a845','#2d6040','#6aae78'];
-
-    function resize() {
-      W = canvas.width  = window.innerWidth;
-      H = canvas.height = window.innerHeight;
-    }
-
-    function makeLeaf(immediate) {
-      const onLeft = Math.random() < 0.5;
-      return {
-        x: onLeft ? Math.random() * W * 0.17 : W * 0.83 + Math.random() * W * 0.17,
-        y: immediate ? Math.random() * H : -70,
-        vx: (Math.random() - 0.5) * 0.35,
-        vy: 0.45 + Math.random() * 0.85,
-        angle: Math.random() * Math.PI * 2,
-        va:   (Math.random() - 0.5) * 0.022,
-        scale: 0.5 + Math.random() * 0.65,
-        shape: Math.floor(Math.random() * paths.length),
-        color: colors[Math.floor(Math.random() * colors.length)],
-        opacity: 0.25 + Math.random() * 0.38,
-        t: Math.random() * Math.PI * 2,
-        swaySpeed: 0.007 + Math.random() * 0.011,
-        swayAmp:   0.28 + Math.random() * 0.5,
-      };
-    }
-
-    const leaves = Array.from({ length: 24 }, () => makeLeaf(true));
-
-    function frame() {
-      ctx.clearRect(0, 0, W, H);
-      for (const l of leaves) {
-        l.t += l.swaySpeed;
-        l.x += l.vx + Math.sin(l.t) * l.swayAmp;
-        l.y += l.vy;
-        l.angle += l.va;
-        if (l.y > H + 90) Object.assign(l, makeLeaf(false));
-
-        ctx.save();
-        ctx.translate(l.x, l.y);
-        ctx.rotate(l.angle);
-        ctx.scale(l.scale, l.scale);
-        ctx.globalAlpha = l.opacity;
-        ctx.fillStyle = l.color;
-        ctx.fill(paths[l.shape]);
-        // midrib line
-        ctx.strokeStyle = 'rgba(0,0,0,0.18)';
-        ctx.lineWidth = 0.8;
-        ctx.beginPath();
-        ctx.moveTo(0, -22); ctx.lineTo(0, 22);
-        ctx.stroke();
-        ctx.restore();
-      }
-      requestAnimationFrame(frame);
-    }
-
-    resize();
-    window.addEventListener('resize', resize);
-    frame();
-  })();
-
-  /* ═══ Button ripple tracking ═══ */
-  document.querySelectorAll('.btn').forEach(btn => {
-    btn.addEventListener('mousemove', e => {
-      const r = btn.getBoundingClientRect();
-      btn.style.setProperty('--rx', ((e.clientX - r.left) / r.width  * 100) + '%');
-      btn.style.setProperty('--ry', ((e.clientY - r.top)  / r.height * 100) + '%');
-    });
-  });
-
-  /* ═══ App ═══ */
-  let model, webcam, maxPredictions;
-  let webcamRunning = false;
-  let frameCount = 0, fpsTimer = null, lastFpsSnap = performance.now();
-
-  const $ = id => document.getElementById(id);
-
-  function setModel(ok, txt) {
-    $('f-model').className = 'f-dot' + (ok ? ' on' : '');
-    $('f-model-txt').textContent = txt;
-  }
-  function setCam(state, txt) {
-    $('f-cam').className = 'f-dot' + (state === 'live' ? ' live' : '');
-    $('f-cam-txt').textContent = txt;
-  }
-  function showLoading(msg) {
-    $('loading-text').textContent = msg;
-    $('loading-wrap').classList.add('active');
-    $('empty-state').classList.add('hidden');
-    $('results-body').style.display = 'none';
-  }
-  function hideLoading() { $('loading-wrap').classList.remove('active'); }
-  function toast(msg) {
-    const el = $('toast');
-    el.textContent = '⚠  ' + msg;
-    el.classList.add('show');
-    setTimeout(() => el.classList.remove('show'), 4200);
-  }
-
-  async function ensureModel() {
-    if (model) return;
-    setModel(false, 'Loading model…');
-    model = await tmImage.load('./model.json', './metadata.json');
-    maxPredictions = model.getTotalClasses();
-    setModel(true, `Model ready · ${maxPredictions} plants`);
-  }
-
-  async function startWebcam() {
-    try {
-      showLoading('Waking the lens…');
-      await ensureModel();
-      $('loading-text').textContent = 'Starting camera…';
-      webcam = new tmImage.Webcam(320, 320, true);
-      await webcam.setup();
-      await webcam.play();
-      $('webcam-mount').innerHTML = '';
-      $('webcam-mount').appendChild(webcam.canvas);
-      $('webcam-container').classList.add('active');
-      $('btn-webcam').style.display = 'none';
-      $('btn-stop').style.display = '';
-      setCam('live', 'Camera live');
-      $('f-fps').style.display = '';
-      webcamRunning = true;
-      buildRows(maxPredictions);
-      hideLoading();
-      fpsTimer = setInterval(() => {
-        const now = performance.now();
-        $('f-fps-txt').textContent = Math.round(frameCount / ((now - lastFpsSnap) / 1000)) + ' fps';
-        frameCount = 0; lastFpsSnap = now;
-      }, 1000);
-      loop();
-    } catch (e) {
-      hideLoading();
-      toast('Camera error: ' + (e.message || e));
-    }
-  }
-
-  function stopWebcam() {
-    if (webcam) { webcam.stop(); webcam = null; }
-    webcamRunning = false;
-    $('webcam-container').classList.remove('active');
-    $('btn-webcam').style.display = '';
-    $('btn-stop').style.display = 'none';
-    setCam('off', 'Camera off');
-    $('f-fps').style.display = 'none';
-    clearInterval(fpsTimer);
-  }
-
-  async function loop() {
-    if (!webcamRunning) return;
-    webcam.update(); frameCount++;
-    const preds = await model.predict(webcam.canvas);
-    renderPreds(preds);
-    requestAnimationFrame(loop);
-  }
-
-  function buildRows(n) {
-    const lc = $('label-container');
-    lc.innerHTML = '';
-    for (let i = 0; i < n; i++) {
-      const div = document.createElement('div');
-      div.className = 'pred-item';
-      div.style.animationDelay = (i * 0.04) + 's';
-      div.innerHTML = `
-        <div class="pred-fill-bg"></div>
-        <div class="pred-inner">
-          <div class="pred-left">
-            <span class="pred-num">${i + 1}</span>
-            <div>
-              <span class="pred-name">—</span>
-              <span class="pred-sublabel">awaiting scan</span>
+    <!-- Header -->
+    <div class="max-w-5xl mx-auto px-6 py-8">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-4xl">🌿</span>
+                <h1 class="title-font text-4xl font-bold tracking-tight">Project GreenFinder</h1>
             </div>
-          </div>
-          <div class="pred-right">
-            <span class="best-tag">Best Match</span>
-            <span class="pred-pct">—</span>
-          </div>
+            <a href="https://github.com/achicodess/projectgreenfinder" target="_blank"
+               class="text-sm font-medium flex items-center gap-2 hover:text-emerald-600 transition">
+                <span>View on GitHub</span>
+                <span class="text-lg">→</span>
+            </a>
         </div>
-        <div class="pred-track"><div class="pred-bar" style="width:0%"></div></div>`;
-      lc.appendChild(div);
-    }
-    $('empty-state').classList.add('hidden');
-    $('results-body').style.display = '';
-    $('results-meta').textContent = n + ' species';
-  }
+        <p class="mt-2 text-emerald-700 max-w-md">Trained on 51+ photos from my garden in Bengaluru. Identifies 20 plants & leaves instantly.</p>
+    </div>
 
-  function renderPreds(preds) {
-    const sorted = [...preds].sort((a, b) => b.probability - a.probability);
-    const items  = $('label-container').querySelectorAll('.pred-item');
-    sorted.forEach((p, i) => {
-      const el = items[i]; if (!el) return;
-      const pct = (p.probability * 100).toFixed(1);
-      el.querySelector('.pred-name').textContent     = p.className;
-      el.querySelector('.pred-sublabel').textContent = i === 0 ? 'top identification' : 'possible match';
-      el.querySelector('.pred-pct').textContent      = pct + '%';
-      el.querySelector('.pred-bar').style.width      = pct + '%';
-      el.querySelector('.pred-fill-bg').style.width  = pct + '%';
-      el.querySelector('.pred-num').textContent      = i + 1;
-      el.classList.toggle('champion', i === 0);
-    });
-  }
+    <div class="max-w-5xl mx-auto px-6 pb-12 grid md:grid-cols-12 gap-8">
 
-  function triggerUpload()   { $('image-upload').click(); }
-  function handleZoneClick() { if (!$('preview-wrap').classList.contains('visible')) triggerUpload(); }
-  function onDragOver(e)     { e.preventDefault(); $('drop-zone').classList.add('drag-over'); }
-  function onDragLeave()     { $('drop-zone').classList.remove('drag-over'); }
-  function onDrop(e) {
-    e.preventDefault(); $('drop-zone').classList.remove('drag-over');
-    const f = e.dataTransfer?.files?.[0];
-    if (f?.type.startsWith('image/')) processFile(f);
-    else toast('Please drop a valid image file.');
-  }
-  function handleFileInput(input) { if (input.files?.[0]) processFile(input.files[0]); }
+        <!-- Left: Camera / Upload -->
+        <div class="md:col-span-7 bg-white rounded-3xl shadow-xl p-8">
+            <div class="flex gap-4 mb-8">
+                <button onclick="startWebcam()" 
+                        id="webcam-btn"
+                        class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-4 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95">
+                    📹 Start Camera
+                </button>
+                <button onclick="triggerUpload()" 
+                        class="flex-1 bg-white border-2 border-emerald-600 hover:bg-emerald-50 text-emerald-700 font-medium py-4 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95">
+                    📸 Upload Photo
+                </button>
+            </div>
 
-  async function processFile(file) {
-    try {
-      const url = URL.createObjectURL(file);
-      $('preview-img').src = url;
-      $('drop-hint').style.display = 'none';
-      $('preview-wrap').classList.add('visible');
-      $('drop-zone').classList.add('has-image');
-      if (webcamRunning) stopWebcam();
-      showLoading('Reading the leaves…');
-      await ensureModel();
-      const img = new Image();
-      img.src = url;
-      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
-      const preds = await model.predict(img);
-      buildRows(preds.length);
-      renderPreds(preds);
-      hideLoading();
-    } catch (e) {
-      hideLoading();
-      toast('Could not read this image: ' + (e.message || e));
-    }
-  }
-  </script>
+            <!-- Camera container -->
+            <div id="webcam-wrapper" class="hidden rounded-3xl overflow-hidden border-4 border-emerald-200 bg-slate-950 aspect-video relative">
+                <canvas id="webcam-canvas" class="w-full"></canvas>
+            </div>
+
+            <!-- Placeholder before starting -->
+            <div id="placeholder" class="aspect-video bg-slate-100 rounded-3xl flex flex-col items-center justify-center border-2 border-dashed border-emerald-300">
+                <div class="text-6xl mb-4">🌱</div>
+                <p class="text-slate-500 font-medium">Camera will appear here</p>
+                <p class="text-xs text-slate-400 mt-2">Point at any plant — it works best in good light</p>
+            </div>
+
+            <!-- Upload input (hidden) -->
+            <input type="file" id="image-upload" accept="image/*" class="hidden" onchange="handleUpload(event)">
+        </div>
+
+        <!-- Right: Results -->
+        <div class="md:col-span-5 bg-white rounded-3xl shadow-xl p-8 h-fit">
+            <h2 class="font-semibold text-lg mb-6 flex items-center gap-2">
+                <span>🌟</span>
+                Prediction
+            </h2>
+            
+            <div id="results" class="space-y-4"></div>
+            
+            <div id="no-result" class="text-center py-12 text-slate-400">
+                <p class="text-5xl mb-4">👆</p>
+                <p class="font-medium">Start camera or upload a photo to see results</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Known Plants -->
+    <div class="max-w-5xl mx-auto px-6 py-12 border-t border-emerald-200">
+        <h2 class="text-2xl font-semibold mb-6 text-center">Trained on these 20 plants from my garden</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 text-sm">
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Agave Attenuata</div>
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Betel Leaves</div>
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Bitter Melon</div>
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Brahma Kamala</div>
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Coral Nymph Sage</div>
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Golden Pothos</div>
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Greater Galangal</div>
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Indian Borage</div>
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Indian Weed</div>
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Ixora Coccinea</div>
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Mulberry</div>
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Peace Lily</div>
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Pencil Cactus</div>
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Red Amaranth</div>
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Rose Leaves</div>
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Sacred Jasmine</div>
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Sandpaper Tree</div>
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Taro Plant</div>
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Tulsi</div>
+            <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Variegated Dwarf Umbrella Tree</div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center text-xs text-emerald-700 py-8 border-t">
+        Made with ❤️ in Bengaluru • Trained with Google Teachable Machine • 
+        <a href="https://github.com/achicodess/projectgreenfinder" class="underline">Fork &amp; improve it</a>
+    </div>
+
+    <script>
+        let model, webcam, maxPredictions;
+        const modelURL = './model.json';
+        const metadataURL = './metadata.json';
+
+        // Tailwind script init
+        function initTailwind() {
+            tailwind.config = {
+                content: [],
+                theme: { extend: {} }
+            };
+        }
+
+        async function loadModel() {
+            document.getElementById('results').innerHTML = `<div class="flex items-center justify-center py-8 text-emerald-600"><span class="animate-pulse">Loading your plant model...</span></div>`;
+            model = await tmImage.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
+            document.getElementById('results').innerHTML = '';
+            return true;
+        }
+
+        async function startWebcam() {
+            if (!model) await loadModel();
+            
+            document.getElementById('placeholder').classList.add('hidden');
+            document.getElementById('webcam-wrapper').classList.remove('hidden');
+            
+            const flip = true;
+            webcam = new tmImage.Webcam(640, 480, flip);
+            await webcam.setup();
+            await webcam.play();
+            
+            const canvas = document.getElementById('webcam-canvas');
+            canvas.width = 640;
+            canvas.height = 480;
+            document.getElementById('webcam-wrapper').appendChild(webcam.canvas);
+            
+            loop();
+        }
+
+        async function loop() {
+            if (!webcam) return;
+            webcam.update();
+            const predictions = await model.predict(webcam.canvas);
+            showPredictions(predictions);
+            requestAnimationFrame(loop);
+        }
+
+        async function triggerUpload() {
+            if (!model) await loadModel();
+            document.getElementById('image-upload').click();
+        }
+
+        async function handleUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            img.onload = async () => {
+                const predictions = await model.predict(img);
+                showPredictions(predictions);
+            };
+        }
+
+        function showPredictions(predictions) {
+            const container = document.getElementById('results');
+            const noResult = document.getElementById('no-result');
+            noResult.classList.add('hidden');
+            container.innerHTML = '';
+            
+            // Sort highest confidence first
+            predictions.sort((a, b) => b.probability - a.probability);
+            
+            predictions.forEach((pred, i) => {
+                const percent = (pred.probability * 100).toFixed(1);
+                const barWidth = Math.max(15, percent);
+                
+                const div = document.createElement('div');
+                div.className = `flex items-center gap-4 ${i === 0 ? 'bg-emerald-50 border border-emerald-200' : 'bg-white'} rounded-2xl p-4`;
+                div.innerHTML = `
+                    <div class="flex-1">
+                        <div class="font-semibold text-lg">${pred.className}</div>
+                        <div class="h-3 bg-slate-100 rounded-full mt-2 overflow-hidden">
+                            <div class="h-3 bg-emerald-500 transition-all" style="width: ${barWidth}%"></div>
+                        </div>
+                    </div>
+                    <div class="font-mono text-2xl font-semibold text-emerald-700 w-14 text-right">${percent}%</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Start everything
+        window.onload = () => {
+            initTailwind();
+            // Model loads only when user clicks a button (faster initial load)
+            console.log('%c🌿 Project GreenFinder ready!', 'color:#10b981; font-weight:600');
+        };
+    </script>
 </body>
 </html>
