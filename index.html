@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project GreenFinder 🌿</title>
+    <title>🌿 Project GreenFinder 🌿</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <style>
@@ -28,7 +28,7 @@
                 <span class="text-lg">→</span>
             </a>
         </div>
-        <p class="mt-2 text-emerald-700 max-w-md">Trained on 51+ photos from my garden in Bengaluru. Identifies 20 plants & leaves instantly.</p>
+        <p class="mt-2 text-emerald-700 max-w-md">Trained on 51+ photos from my garden in Bengaluru. This model identifies 20 plants & leaves instantly.</p>
     </div>
 
     <div class="max-w-5xl mx-auto px-6 pb-12 grid md:grid-cols-12 gap-8">
@@ -39,11 +39,11 @@
                 <button onclick="startWebcam()" 
                         id="webcam-btn"
                         class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-4 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95">
-                    📹 Start Camera
+                    Start Camera
                 </button>
                 <button onclick="triggerUpload()" 
                         class="flex-1 bg-white border-2 border-emerald-600 hover:bg-emerald-50 text-emerald-700 font-medium py-4 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95">
-                    📸 Upload Photo
+                    Upload Photo
                 </button>
             </div>
 
@@ -56,7 +56,7 @@
             <div id="placeholder" class="aspect-video bg-slate-100 rounded-3xl flex flex-col items-center justify-center border-2 border-dashed border-emerald-300">
                 <div class="text-6xl mb-4">🌱</div>
                 <p class="text-slate-500 font-medium">Camera will appear here</p>
-                <p class="text-xs text-slate-400 mt-2">Point at any plant — it works best in good light</p>
+                <p class="text-xs text-slate-400 mt-2">Point at any plant. It works best in good light</p>
             </div>
 
             <!-- Upload input (hidden) -->
@@ -81,7 +81,7 @@
 
     <!-- Known Plants -->
     <div class="max-w-5xl mx-auto px-6 py-12 border-t border-emerald-200">
-        <h2 class="text-2xl font-semibold mb-6 text-center">Trained on these 20 plants from my garden</h2>
+        <h2 class="text-2xl font-semibold mb-6 text-center">The model is currently trained on these 20 listed plants</h2>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 text-sm">
             <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Agave Attenuata</div>
             <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Betel Leaves</div>
@@ -108,7 +108,7 @@
 
     <!-- Footer -->
     <div class="text-center text-xs text-emerald-700 py-8 border-t">
-        Made with ❤️ in Bengaluru • Trained with Google Teachable Machine • 
+        Made with ❤️ in Namma Bengaluru • Trained with Google Teachable Machine • 
         <a href="https://github.com/achicodess/projectgreenfinder" class="underline">Fork &amp; improve it</a>
     </div>
 
