@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌿 Project GreenFinder 🌿</title>
+    <title> 🌿 Project GreenFinder 🌿</title>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.0/dist/teachablemachine-image.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
         body { font-family: 'Inter', system-ui, sans-serif; }
@@ -23,38 +23,32 @@
             </div>
             <a href="https://github.com/achicodess/projectgreenfinder" target="_blank" class="text-sm font-medium flex items-center gap-2 hover:text-emerald-600">View on GitHub →</a>
         </div>
-        <p class="mt-2 text-emerald-700">Trained on 51+ photos from my garden in Bengaluru • Identifies 20 plants instantly</p>
+        <p class="mt-2 text-emerald-700">Trained on 51+ photos from my garden in Bengaluru • Instantly dentifies 20 plants.</p>
     </div>
 
     <div class="max-w-5xl mx-auto px-6 pb-12 grid md:grid-cols-12 gap-8">
         <div class="md:col-span-7 bg-white rounded-3xl shadow-xl p-8">
             <div class="flex gap-4 mb-8">
-                <button onclick="startWebcam()" id="webcam-btn"
-                        class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-4 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95">
-                     Start Camera
-                </button>
-                <button onclick="triggerUpload()" id="upload-btn"
-                        class="flex-1 bg-white border-2 border-emerald-600 hover:bg-emerald-50 text-emerald-700 font-medium py-4 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95">
-                     Upload Photo
-                </button>
+                <button onclick="startWebcam()" id="webcam-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-4 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95"> Start Camera</button>
+                <button onclick="triggerUpload()" id="upload-btn" class="flex-1 bg-white border-2 border-emerald-600 hover:bg-emerald-50 text-emerald-700 font-medium py-4 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95"> Upload Photo</button>
             </div>
 
             <div id="webcam-wrapper" class="hidden rounded-3xl overflow-hidden border-4 border-emerald-200 bg-slate-950 aspect-video"></div>
             <div id="placeholder" class="aspect-video bg-slate-100 rounded-3xl flex flex-col items-center justify-center border-2 border-dashed border-emerald-300">
                 <div class="text-6xl mb-4">🌱</div>
                 <p class="text-slate-500 font-medium">Ready when you are</p>
-                <p class="text-xs text-slate-400 mt-2">Point at any plant in good lighting</p>
+                <p class="text-xs text-slate-400 mt-2">Point at any plant in good light</p>
             </div>
         </div>
 
         <div class="md:col-span-5 bg-white rounded-3xl shadow-xl p-8">
-            <h2 class="font-semibold text-lg mb-6 flex items-center gap-2"><span>🌟</span> Live Prediction</h2>
+            <h2 class="font-semibold text-lg mb-6 flex items-center gap-2"><span>⚡️</span> Live Prediction</h2>
             <div id="results" class="min-h-[320px]"></div>
         </div>
     </div>
 
     <div class="max-w-5xl mx-auto px-6 py-12 border-t border-emerald-200">
-        <h2 class="text-2xl font-semibold mb-6 text-center">The 20 plants my model is trained on</h2>
+        <h2 class="text-2xl font-semibold mb-6 text-center">The plants the model is trained on</h2>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 text-sm">
             <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Agave Attenuata</div>
             <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Betel Leaves</div>
@@ -80,32 +74,28 @@
     </div>
 
     <div class="text-center text-xs text-emerald-700 py-8 border-t">
-        Made with ❤️ in Namma Bengaluru • Powered by Google Teachable Machine
+        Made with ❤️ in Bengaluru • Powered by Google Teachable Machine
     </div>
 
     <script>
         let model, webcam;
-        // Relative paths – works perfectly on GitHub Pages
-        const modelURL = './model.json';
-        const metadataURL = './metadata.json';
 
         async function loadModel() {
             const resultsDiv = document.getElementById('results');
-            resultsDiv.innerHTML = `<div class="flex justify-center py-12 text-emerald-600 animate-pulse">🌱 Loading your AI model... (8–12 seconds first time)</div>`;
+            resultsDiv.innerHTML = `<div class="flex justify-center py-12 text-emerald-600 animate-pulse">🌱 Loading AI model... (first time 8–12 seconds)</div>`;
+
+            if (typeof tmImage === 'undefined') {
+                resultsDiv.innerHTML = `<div class="bg-red-50 border border-red-300 text-red-700 p-6 rounded-2xl text-center"><p class="font-semibold">Library still loading...</p><p class="text-xs mt-3">Hard refresh (Ctrl+Shift+R) once more.</p></div>`;
+                return;
+            }
 
             try {
-                model = await tmImage.load(modelURL, metadataURL);
-                resultsDiv.innerHTML = `<div class="text-center py-8 text-emerald-600">✅ Model ready! Click Start Camera or Upload Photo 👆</div>`;
-                console.log('%c✅ Model loaded successfully (20 classes)', 'color:#10b981; font-weight:600');
-                return true;
+                model = await tmImage.load('./model.json', './metadata.json');
+                resultsDiv.innerHTML = `<div class="text-center py-8 text-emerald-600">✅ Model ready! Use camera or upload photo above 👆</div>`;
+                console.log('%c✅ Model loaded successfully!', 'color:#10b981; font-weight:600');
             } catch (e) {
-                console.error('Model load error:', e);
-                resultsDiv.innerHTML = `
-                    <div class="bg-red-50 border border-red-300 text-red-700 p-6 rounded-2xl text-center">
-                        <p class="font-semibold">Could not load model</p>
-                        <p class="text-xs mt-3">Exact error: ${e.message || e}</p>
-                        <p class="text-xs mt-4">Hard refresh (Ctrl+Shift+R) usually fixes it. All files are present in the repo.</p>
-                    </div>`;
+                console.error(e);
+                resultsDiv.innerHTML = `<div class="bg-red-50 border border-red-300 text-red-700 p-6 rounded-2xl text-center"><p class="font-semibold">Model failed to load</p><p class="text-xs mt-3">${e.message || e}</p><p class="text-xs mt-4">Hard refresh (Ctrl+Shift+R) usually fixes it instantly.</p></div>`;
             }
         }
 
@@ -140,18 +130,10 @@
 
         function triggerUpload() {
             if (!model) {
-                loadModel().then(() => createUpload());
+                loadModel().then(() => { const input = document.createElement('input'); input.type='file'; input.accept='image/*'; input.onchange=handleUpload; input.click(); });
                 return;
             }
-            createUpload();
-        }
-
-        function createUpload() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.onchange = handleUpload;
-            input.click();
+            const input = document.createElement('input'); input.type='file'; input.accept='image/*'; input.onchange=handleUpload; input.click();
         }
 
         async function handleUpload(e) {
@@ -173,22 +155,14 @@
                 const percent = (pred.probability * 100).toFixed(1);
                 const div = document.createElement('div');
                 div.className = `flex items-center gap-4 ${i===0 ? 'bg-emerald-50 border border-emerald-200' : 'bg-white'} rounded-2xl p-4`;
-                div.innerHTML = `
-                    <div class="flex-1">
-                        <div class="font-semibold">${pred.className}</div>
-                        <div class="h-2.5 bg-slate-100 rounded-full mt-2 overflow-hidden">
-                            <div class="h-2.5 bg-emerald-500 transition-all" style="width: ${percent}%"></div>
-                        </div>
-                    </div>
-                    <div class="font-mono text-3xl font-semibold text-emerald-700">${percent}%</div>
-                `;
+                div.innerHTML = `<div class="flex-1"><div class="font-semibold">${pred.className}</div><div class="h-2.5 bg-slate-100 rounded-full mt-2 overflow-hidden"><div class="h-2.5 bg-emerald-500 transition-all" style="width: \( {percent}%"></div></div></div><div class="font-mono text-3xl font-semibold text-emerald-700"> \){percent}%</div>`;
                 container.appendChild(div);
             });
         }
 
         window.onload = () => {
             tailwind.config = {};
-            loadModel();
+            setTimeout(loadModel, 500);   // ← FINAL SAFETY DELAY
         };
     </script>
 </body>
