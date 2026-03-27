@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Project GreenFinder</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+  <!-- ✅ PINNED stable version (matches your model export) -->
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.4/dist/teachablemachine-image.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
@@ -29,7 +30,7 @@
   <div class="max-w-5xl mx-auto px-6 py-8">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <span class="text-4xl">🌿</span>
+        <span class="text-4xl">Leaf</span>
         <h1 class="title-font text-4xl font-bold tracking-tight">Project GreenFinder</h1>
       </div>
 
@@ -63,7 +64,7 @@
           id="upload-btn"
           class="flex-1 bg-white border-2 border-emerald-600 hover:bg-emerald-50 text-emerald-700 font-medium py-4 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95"
         >
-          ⬆️ Upload Photo
+          Upload Photo
         </button>
       </div>
 
@@ -78,7 +79,7 @@
 
     <div class="md:col-span-5 bg-white rounded-3xl shadow-xl p-8">
       <h2 class="font-semibold text-lg mb-6 flex items-center gap-2">
-        <span>⚡️</span> Live Prediction
+        ⚡ Live Prediction
       </h2>
 
       <div id="results" class="min-h-[320px]"></div>
@@ -116,26 +117,45 @@
     Made with ❤️ in Bengaluru • Powered by Google Teachable Machine
   </div>
 
+  <!-- ✅ FULLY FIXED SCRIPT (race condition solved + better UX) -->
   <script>
     let model, webcam;
 
+    // Helper: wait until the Teachable Machine library is fully loaded
+    async function waitForLibrary(maxAttempts = 40) {
+      for (let i = 0; i < maxAttempts; i++) {
+        if (typeof tmImage !== 'undefined') return true;
+        await new Promise(r => setTimeout(r, 150));
+      }
+      return false;
+    }
+
     async function loadModel() {
       const resultsDiv = document.getElementById('results');
-      resultsDiv.innerHTML = `<div class="flex justify-center py-12 text-emerald-600 animate-pulse">Loading AI model... (first time 8–12 seconds)</div>`;
+      resultsDiv.innerHTML = `<div class="flex justify-center py-12 text-emerald-600 animate-pulse">Loading AI model...<br><span class="text-xs mt-3 block">(first time takes 8–12 seconds)</span></div>`;
 
-      if (typeof tmImage === 'undefined') {
-        resultsDiv.innerHTML = `<div class="bg-red-50 border border-red-300 text-red-700 p-6 rounded-2xl text-center"><p class="font-semibold">Library still loading...</p><p class="text-xs mt-3">Hard refresh (Ctrl+Shift+R) once more.</p></div>`;
+      // Wait for library (this fixes the "Library still loading..." error)
+      const libraryReady = await waitForLibrary();
+      if (!libraryReady) {
+        resultsDiv.innerHTML = `<div class="bg-red-50 border border-red-300 text-red-700 p-6 rounded-2xl text-center">
+          <p class="font-semibold">Library still loading...</p>
+          <p class="text-xs mt-3">Try hard refresh (Ctrl + Shift + R)<br>or check your internet connection.</p>
+        </div>`;
         return false;
       }
 
       try {
         model = await tmImage.load('./model.json', './metadata.json');
-        resultsDiv.innerHTML = `<div class="text-center py-8 text-emerald-600">✅ Model ready! Use camera or upload photo above</div>`;
+        resultsDiv.innerHTML = `<div class="text-center py-8 text-emerald-600 font-medium">✅ Model ready! Use camera or upload photo above</div>`;
         console.log('%c✅ Model loaded successfully!', 'color:#10b981; font-weight:600');
         return true;
       } catch (e) {
         console.error(e);
-        resultsDiv.innerHTML = `<div class="bg-red-50 border border-red-300 text-red-700 p-6 rounded-2xl text-center"><p class="font-semibold">Model failed to load</p><p class="text-xs mt-3">${e.message || e}</p><p class="text-xs mt-4">Hard refresh (Ctrl+Shift+R) usually fixes it instantly.</p></div>`;
+        resultsDiv.innerHTML = `<div class="bg-red-50 border border-red-300 text-red-700 p-6 rounded-2xl text-center">
+          <p class="font-semibold">Model failed to load</p>
+          <p class="text-xs mt-3">${e.message || e}</p>
+          <p class="text-xs mt-4">Hard refresh (Ctrl+Shift+R) usually fixes it.</p>
+        </div>`;
         return false;
       }
     }
@@ -143,13 +163,13 @@
     async function startWebcam() {
       const btn = document.getElementById('webcam-btn');
       btn.disabled = true;
-      btn.textContent = '⏳ Starting camera...';
+      btn.textContent = 'Starting camera...';
 
       if (!model) {
         const loaded = await loadModel();
         if (!loaded) {
           btn.disabled = false;
-          btn.textContent = '📷 Start Camera';
+          btn.textContent = 'Start Camera';
           return;
         }
       }
@@ -166,12 +186,12 @@
         await webcam.play();
 
         wrapper.appendChild(webcam.canvas);
-        btn.textContent = '🎥 Camera Running';
+        btn.textContent = 'Camera Running';
         loop();
       } catch (e) {
         console.error(e);
         btn.disabled = false;
-        btn.textContent = '📷 Start Camera';
+        btn.textContent = 'Start Camera';
         document.getElementById('placeholder').classList.remove('hidden');
         wrapper.classList.add('hidden');
         document.getElementById('results').innerHTML =
@@ -181,7 +201,6 @@
 
     async function loop() {
       if (!webcam || !model) return;
-
       webcam.update();
       const predictions = await model.predict(webcam.canvas);
       showPredictions(predictions);
@@ -255,9 +274,10 @@
       });
     }
 
+    // Start everything when page loads
     window.onload = () => {
       tailwind.config = {};
-      setTimeout(loadModel, 500);
+      loadModel();           // ← no more artificial 500ms delay
     };
   </script>
 </body>
