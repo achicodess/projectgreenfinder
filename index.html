@@ -1,21 +1,16 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Project GreenFinder</title>
-
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.4/dist/teachablemachine-image.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
-
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
-    body { font-family: 'Inter', system-ui, sans-serif; }
-    .title-font { font-family: 'Playfair Display', serif; }
-    .leaf-bg { background: linear-gradient(135deg, #f0f8f0, #e8f5e8); }
+    body{font-family:'Inter',system-ui,sans-serif}.title-font{font-family:'Playfair Display',serif}.leaf-bg{background:linear-gradient(135deg,#f0f8f0,#e8f5e8)}
   </style>
 </head>
-
 <body class="leaf-bg min-h-screen text-slate-800">
   <div class="max-w-5xl mx-auto px-6 py-8">
     <div class="flex items-center justify-between">
@@ -38,18 +33,18 @@
       <div id="placeholder" class="aspect-video bg-slate-100 rounded-3xl flex flex-col items-center justify-center border-2 border-dashed border-emerald-300">
         <div class="text-6xl mb-4">🌱</div>
         <p class="text-slate-500 font-medium">Ready when you are</p>
-        <p class="text-xs text-slate-400 mt-2">Point at any plant in good light</p>
+        <p class="text-xs text-slate-400 mt-2">Point at any plant in good lighting</p>
       </div>
     </div>
 
     <div class="md:col-span-5 bg-white rounded-3xl shadow-xl p-8">
-      <h2 class="font-semibold text-lg mb-6 flex items-center gap-2">⚡ Live Prediction</h2>
+      <h2 class="font-semibold text-lg mb-6 flex items-center gap-2">✨ Live Prediction</h2>
       <div id="results" class="min-h-[320px]"></div>
     </div>
   </div>
 
   <div class="max-w-5xl mx-auto px-6 py-12 border-t border-emerald-200">
-    <h2 class="text-2xl font-semibold mb-6 text-center">The plants the model is currently trained on</h2>
+    <h2 class="text-2xl font-semibold mb-6 text-center">The list of plants the model is currently trained on</h2>
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 text-sm">
       <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Agave Attenuata</div>
       <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Betel Leaves</div>
@@ -75,111 +70,47 @@
   </div>
 
   <div class="text-center text-xs text-emerald-700 py-8 border-t">
-    Made with ❤️ in Bengaluru • Powered by Google Teachable Machine
+    Made with ❤️ in Namma Bengaluru • Powered by Google Teachable Machine
   </div>
 
   <script>
     let model, webcam;
-
-    async function waitForLibrary(maxAttempts = 40) {
-      for (let i = 0; i < maxAttempts; i++) {
-        if (typeof tmImage !== 'undefined') return true;
-        await new Promise(r => setTimeout(r, 150));
-      }
-      return false;
+    async function waitForLibrary(m=40){for(let i=0;i<m;i++){if(typeof tmImage!=='undefined')return true;await new Promise(r=>setTimeout(r,150))}return false}
+    async function loadModel(){
+      const d=document.getElementById('results');
+      d.innerHTML=`<div class="flex justify-center py-12 text-emerald-600 animate-pulse">Loading AI model...<br><span class="text-xs mt-3 block">(first time takes 8–12 seconds)</span></div>`;
+      if(!await waitForLibrary()){d.innerHTML=`<div class="bg-red-50 border border-red-300 text-red-700 p-6 rounded-2xl text-center"><p class="font-semibold">Library still loading...</p><p class="text-xs mt-3">Try hard refresh (Ctrl + Shift + R)</p></div>`;return false}
+      try{model=await tmImage.load('./model.json','./metadata.json');d.innerHTML=`<div class="text-center py-8 text-emerald-600 font-medium">✅ Model ready! Use camera or upload photo above</div>`;return true}
+      catch(e){console.error(e);d.innerHTML=`<div class="bg-red-50 border border-red-300 text-red-700 p-6 rounded-2xl text-center"><p class="font-semibold">Model failed to load</p></div>`;return false}
     }
-
-    async function loadModel() {
-      const resultsDiv = document.getElementById('results');
-      resultsDiv.innerHTML = `<div class="flex justify-center py-12 text-emerald-600 animate-pulse">Loading AI model...<br><span class="text-xs mt-3 block">(first time takes 8–12 seconds)</span></div>`;
-
-      const libraryReady = await waitForLibrary();
-      if (!libraryReady) {
-        resultsDiv.innerHTML = `<div class="bg-red-50 border border-red-300 text-red-700 p-6 rounded-2xl text-center">
-          <p class="font-semibold">Library still loading...</p>
-          <p class="text-xs mt-3">Try hard refresh (Ctrl + Shift + R)<br>or check your internet.</p>
-        </div>`;
-        return false;
-      }
-
-      try {
-        model = await tmImage.load('./model.json', './metadata.json');
-        resultsDiv.innerHTML = `<div class="text-center py-8 text-emerald-600 font-medium">✅ Model ready! Use camera or upload photo above</div>`;
-        console.log('%c✅ Model loaded successfully!', 'color:#10b981; font-weight:600');
-        return true;
-      } catch (e) {
-        console.error(e);
-        resultsDiv.innerHTML = `<div class="bg-red-50 border border-red-300 text-red-700 p-6 rounded-2xl text-center">
-          <p class="font-semibold">Model failed to load</p>
-          <p class="text-xs mt-3">${e.message || e}</p>
-        </div>`;
-        return false;
-      }
-    }
-
-    async function startWebcam() {
-      const btn = document.getElementById('webcam-btn');
-      btn.disabled = true; btn.textContent = 'Starting camera...';
-      if (!model) { const loaded = await loadModel(); if (!loaded) { btn.disabled = false; btn.textContent = 'Start Camera'; return; } }
+    async function startWebcam(){
+      const b=document.getElementById('webcam-btn');b.disabled=true;b.textContent='Starting camera...';
+      if(!model){const loaded=await loadModel();if(!loaded){b.disabled=false;b.textContent='Start Camera';return}}
       document.getElementById('placeholder').classList.add('hidden');
-      const wrapper = document.getElementById('webcam-wrapper'); wrapper.classList.remove('hidden'); wrapper.innerHTML = '';
-      try {
-        webcam = new tmImage.Webcam(640, 480, true);
-        await webcam.setup(); await webcam.play();
-        wrapper.appendChild(webcam.canvas);
-        btn.textContent = 'Camera Running';
-        loop();
-      } catch (e) { console.error(e); btn.disabled = false; btn.textContent = 'Start Camera'; document.getElementById('placeholder').classList.remove('hidden'); wrapper.classList.add('hidden'); }
+      const w=document.getElementById('webcam-wrapper');w.classList.remove('hidden');w.innerHTML='';
+      try{webcam=new tmImage.Webcam(640,480,true);await webcam.setup();await webcam.play();w.appendChild(webcam.canvas);b.textContent='Camera Running';loop()}
+      catch(e){console.error(e);b.disabled=false;b.textContent='Start Camera';document.getElementById('placeholder').classList.remove('hidden');w.classList.add('hidden')}
     }
-
-    async function loop() {
-      if (!webcam || !model) return;
-      webcam.update();
-      const predictions = await model.predict(webcam.canvas);
-      showPredictions(predictions);
-      requestAnimationFrame(loop);
+    async function loop(){if(!webcam||!model)return;webcam.update();showPredictions(await model.predict(webcam.canvas));requestAnimationFrame(loop)}
+    function triggerUpload(){if(!model){loadModel().then(l=>l&&createUpload());return}createUpload()}
+    function createUpload(){const i=document.createElement('input');i.type='file';i.accept='image/*';i.onchange=handleUpload;i.click()}
+    async function handleUpload(e){
+      const f=e.target.files[0];if(!f||!model)return;
+      const img=new Image();img.src=URL.createObjectURL(f);
+      img.onload=async()=>{showPredictions(await model.predict(img))}
     }
-
-    function triggerUpload() {
-      if (!model) { loadModel().then(loaded => { if (!loaded) return; createUploadInput(); }); return; }
-      createUploadInput();
-    }
-
-    function createUploadInput() {
-      const input = document.createElement('input');
-      input.type = 'file'; input.accept = 'image/*';
-      input.onchange = handleUpload;
-      input.click();
-    }
-
-    async function handleUpload(e) {
-      const file = e.target.files[0];
-      if (!file || !model) return;
-      const img = new Image();
-      img.src = URL.createObjectURL(file);
-      img.onload = async () => {
-        const predictions = await model.predict(img);
-        showPredictions(predictions);
-      };
-    }
-
-    function showPredictions(predictions) {
-      const container = document.getElementById('results');
-      container.innerHTML = '';
-      predictions.sort((a, b) => b.probability - a.probability);
-      predictions.forEach(pred => {
-        const percent = (pred.probability * 100).toFixed(1);
-        const div = document.createElement('div');
-        div.className = `flex items-center gap-4 ${pred.probability > 0.6 ? 'bg-emerald-50 border border-emerald-200' : 'bg-white'} rounded-2xl p-4 mb-3 shadow-sm`;
-        div.innerHTML = `<div class="flex-1"><div class="font-semibold">${pred.className}</div><div class="h-2.5 bg-slate-100 rounded-full mt-2 overflow-hidden"><div class="h-2.5 bg-emerald-500" style="width: ${percent}%"></div></div></div><div class="font-mono text-3xl font-semibold text-emerald-700">${percent}%</div>`;
-        container.appendChild(div);
+    function showPredictions(p){
+      const c=document.getElementById('results');c.innerHTML='';
+      p.sort((a,b)=>b.probability-a.probability);
+      p.forEach(pred=>{
+        const pct=(pred.probability*100).toFixed(1);
+        const d=document.createElement('div');
+        d.className=`flex items-center gap-4 ${pred.probability>0.6?'bg-emerald-50 border border-emerald-200':'bg-white'} rounded-2xl p-4 mb-3 shadow-sm`;
+        d.innerHTML=`<div class="flex-1"><div class="font-semibold">${pred.className}</div><div class="h-2.5 bg-slate-100 rounded-full mt-2 overflow-hidden"><div class="h-2.5 bg-emerald-500" style="width:${pct}%"></div></div></div><div class="font-mono text-3xl font-semibold text-emerald-700">${pct}%</div>`;
+        c.appendChild(d);
       });
     }
-
-    window.onload = () => {
-      tailwind.config = {};
-      loadModel();
-    };
+    window.onload=()=>{tailwind.config={};loadModel()}
   </script>
 </body>
 </html>
