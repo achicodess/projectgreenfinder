@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Project GreenFinder</title>
 
-  <!-- ✅ PINNED stable version (matches your model export) -->
+  <!-- ✅ Pinned stable version (matches your model) -->
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.4/dist/teachablemachine-image.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
 
@@ -30,15 +30,12 @@
   <div class="max-w-5xl mx-auto px-6 py-8">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <span class="text-4xl">Leaf</span>
+        <span class="text-4xl">🌿</span>
         <h1 class="title-font text-4xl font-bold tracking-tight">Project GreenFinder</h1>
       </div>
 
-      <a
-        href="https://github.com/achicodess/projectgreenfinder"
-        target="_blank"
-        class="text-sm font-medium flex items-center gap-2 hover:text-emerald-600"
-      >
+      <a href="https://github.com/achicodess/projectgreenfinder" target="_blank"
+         class="text-sm font-medium flex items-center gap-2 hover:text-emerald-600">
         View on GitHub →
       </a>
     </div>
@@ -51,19 +48,13 @@
   <div class="max-w-5xl mx-auto px-6 pb-12 grid md:grid-cols-12 gap-8">
     <div class="md:col-span-7 bg-white rounded-3xl shadow-xl p-8">
       <div class="flex gap-4 mb-8">
-        <button
-          onclick="startWebcam()"
-          id="webcam-btn"
-          class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-4 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95"
-        >
+        <button onclick="startWebcam()" id="webcam-btn"
+          class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-4 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95">
           Start Camera
         </button>
 
-        <button
-          onclick="triggerUpload()"
-          id="upload-btn"
-          class="flex-1 bg-white border-2 border-emerald-600 hover:bg-emerald-50 text-emerald-700 font-medium py-4 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95"
-        >
+        <button onclick="triggerUpload()" id="upload-btn"
+          class="flex-1 bg-white border-2 border-emerald-600 hover:bg-emerald-50 text-emerald-700 font-medium py-4 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95">
           Upload Photo
         </button>
       </div>
@@ -78,17 +69,13 @@
     </div>
 
     <div class="md:col-span-5 bg-white rounded-3xl shadow-xl p-8">
-      <h2 class="font-semibold text-lg mb-6 flex items-center gap-2">
-        ⚡ Live Prediction
-      </h2>
-
+      <h2 class="font-semibold text-lg mb-6 flex items-center gap-2">⚡ Live Prediction</h2>
       <div id="results" class="min-h-[320px]"></div>
     </div>
   </div>
 
   <div class="max-w-5xl mx-auto px-6 py-12 border-t border-emerald-200">
     <h2 class="text-2xl font-semibold mb-6 text-center">The plants the model is currently trained on</h2>
-
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 text-sm">
       <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Agave Attenuata</div>
       <div class="bg-white/70 px-4 py-3 rounded-2xl text-center">Betel Leaves</div>
@@ -117,11 +104,9 @@
     Made with ❤️ in Bengaluru • Powered by Google Teachable Machine
   </div>
 
-  <!-- ✅ FULLY FIXED SCRIPT (race condition solved + better UX) -->
   <script>
     let model, webcam;
 
-    // Helper: wait until the Teachable Machine library is fully loaded
     async function waitForLibrary(maxAttempts = 40) {
       for (let i = 0; i < maxAttempts; i++) {
         if (typeof tmImage !== 'undefined') return true;
@@ -134,12 +119,11 @@
       const resultsDiv = document.getElementById('results');
       resultsDiv.innerHTML = `<div class="flex justify-center py-12 text-emerald-600 animate-pulse">Loading AI model...<br><span class="text-xs mt-3 block">(first time takes 8–12 seconds)</span></div>`;
 
-      // Wait for library (this fixes the "Library still loading..." error)
       const libraryReady = await waitForLibrary();
       if (!libraryReady) {
         resultsDiv.innerHTML = `<div class="bg-red-50 border border-red-300 text-red-700 p-6 rounded-2xl text-center">
           <p class="font-semibold">Library still loading...</p>
-          <p class="text-xs mt-3">Try hard refresh (Ctrl + Shift + R)<br>or check your internet connection.</p>
+          <p class="text-xs mt-3">Try hard refresh (Ctrl + Shift + R)<br>or check your internet.</p>
         </div>`;
         return false;
       }
@@ -154,7 +138,6 @@
         resultsDiv.innerHTML = `<div class="bg-red-50 border border-red-300 text-red-700 p-6 rounded-2xl text-center">
           <p class="font-semibold">Model failed to load</p>
           <p class="text-xs mt-3">${e.message || e}</p>
-          <p class="text-xs mt-4">Hard refresh (Ctrl+Shift+R) usually fixes it.</p>
         </div>`;
         return false;
       }
@@ -175,7 +158,6 @@
       }
 
       document.getElementById('placeholder').classList.add('hidden');
-
       const wrapper = document.getElementById('webcam-wrapper');
       wrapper.classList.remove('hidden');
       wrapper.innerHTML = '';
@@ -184,7 +166,6 @@
         webcam = new tmImage.Webcam(640, 480, true);
         await webcam.setup();
         await webcam.play();
-
         wrapper.appendChild(webcam.canvas);
         btn.textContent = 'Camera Running';
         loop();
@@ -194,8 +175,6 @@
         btn.textContent = 'Start Camera';
         document.getElementById('placeholder').classList.remove('hidden');
         wrapper.classList.add('hidden');
-        document.getElementById('results').innerHTML =
-          `<div class="bg-red-50 border border-red-300 text-red-700 p-6 rounded-2xl text-center"><p class="font-semibold">Camera failed to start</p><p class="text-xs mt-3">${e.message || e}</p></div>`;
       }
     }
 
@@ -209,7 +188,7 @@
 
     function triggerUpload() {
       if (!model) {
-        loadModel().then((loaded) => {
+        loadModel().then(loaded => {
           if (!loaded) return;
           const input = document.createElement('input');
           input.type = 'file';
@@ -219,7 +198,6 @@
         });
         return;
       }
-
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*';
@@ -230,54 +208,38 @@
     async function handleUpload(e) {
       const file = e.target.files[0];
       if (!file || !model) return;
-
       const img = new Image();
       img.src = URL.createObjectURL(file);
-
       img.onload = async () => {
-        try {
-          const predictions = await model.predict(img);
-          showPredictions(predictions);
-        } catch (err) {
-          console.error(err);
-          document.getElementById('results').innerHTML =
-            `<div class="bg-red-50 border border-red-300 text-red-700 p-6 rounded-2xl text-center"><p class="font-semibold">Prediction failed</p><p class="text-xs mt-3">${err.message || err}</p></div>`;
-        }
+        const predictions = await model.predict(img);
+        showPredictions(predictions);
       };
     }
 
     function showPredictions(predictions) {
       const container = document.getElementById('results');
       container.innerHTML = '';
-
       predictions.sort((a, b) => b.probability - a.probability);
-
-      predictions.forEach((pred, i) => {
+      predictions.forEach((pred) => {
         const percent = (pred.probability * 100).toFixed(1);
         const div = document.createElement('div');
-
-        div.className = `flex items-center gap-4 ${
-          i === 0 ? 'bg-emerald-50 border border-emerald-200' : 'bg-white'
-        } rounded-2xl p-4 mb-3 shadow-sm`;
-
+        div.className = `flex items-center gap-4 ${pred.probability > 0.6 ? 'bg-emerald-50 border border-emerald-200' : 'bg-white'} rounded-2xl p-4 mb-3 shadow-sm`;
         div.innerHTML = `
           <div class="flex-1">
             <div class="font-semibold">${pred.className}</div>
             <div class="h-2.5 bg-slate-100 rounded-full mt-2 overflow-hidden">
-              <div class="h-2.5 bg-emerald-500 transition-all" style="width: ${percent}%"></div>
+              <div class="h-2.5 bg-emerald-500" style="width: ${percent}%"></div>
             </div>
           </div>
           <div class="font-mono text-3xl font-semibold text-emerald-700">${percent}%</div>
         `;
-
         container.appendChild(div);
       });
     }
 
-    // Start everything when page loads
     window.onload = () => {
       tailwind.config = {};
-      loadModel();           // ← no more artificial 500ms delay
+      loadModel();
     };
   </script>
 </body>
