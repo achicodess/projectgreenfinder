@@ -1,7 +1,7 @@
 # ProjectGreenfinder
 
 ## A fully functional AI Model built with Google Teachable Machine that identifies 20 plants using Computer Vision. 
-This project is an AI Model that identifies 20 diffrent plants and leaves that it has been trained on. The model is trained on 51+ photos and can identify all of them accurately. The AI model is built using Google's Teachable Machine and is hosted on Github Pages.
+This project is an AI Model that identifies 20 diffrent plants and leaves that it has been trained on. The model is trained on 51+ photos and can identify all of them accurately. The AI model is built using Google's Teachable Machine and is hosted on Cloudflare Pages.
 The website is wriiten using HTML and CSS whereas the AI brain lives in these 3 main files:  
 
 * model.json
@@ -33,5 +33,5 @@ The list of plants and leaves the AI has been trained on has been listed below:
 * Varigated Dwarf Umbrella Tree
 
 
-Vist https://achicodess.github.io/projectgreenfinder/ to view the website and know more about the AI Model. 
+Vist https://projectgreenfinder.pages.dev/ to view the website and know more about the AI Model. 
 
